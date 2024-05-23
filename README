@@ -30,6 +30,8 @@ The script is written in Python, so you must have that installed. I use Python 2
 
 SciPy (http://www.scipy.org/)
 
+NumPy (https://numpy.org)
+
 (Optional) For CML input/output, you'll need Golem (http://www.lexical.org.uk/golem/), and lxml (http://codespeak.net/lxml/).
 
 (Optional) For graphical output, you'll need Matplotlib (http://matplotlib.sourceforge.net/).
