@@ -14,6 +14,7 @@ import re
 import optparse
 
 import scipy as S
+import numpy as np
 
 import CijUtil
 import castep
@@ -28,9 +29,9 @@ def main(input_options, libmode=False):
         # these are the IRE conventions, except that integers are 0->5 rather than 1->6
         strainDict = {0:"xx",1:"yy",2:"zz",3:"yz", 4:"zx", 5:"xy"}
 
-        strainsUsed = S.zeros((6,1))
+        strainsUsed = np.zeros((6,1))
 
-        for a in range(0,S.size(strain)):
+        for a in range(0,np.size(strain)):
             if strain[a] != 0.0:
                 print(strainDict[a], "component is non-zero")
                 strainsUsed[a] = 1
@@ -195,8 +196,8 @@ def main(input_options, libmode=False):
     print("\n<>---------------------------- ANALYSIS ---------------------------------<>")
     
     # initialise 1d array to store all 21 unique elastic constants - will be transformed into 6x6 matrix later
-    finalCijs = S.zeros((21,1))
-    errors = S.zeros((21,1))
+    finalCijs = np.zeros((21,1))
+    errors = np.zeros((21,1))
     
     for patt in range(numStrainPatterns//numsteps):
         
@@ -215,9 +216,9 @@ def main(input_options, libmode=False):
             # numbering according to IRE conventions (Proc IRE, 1949)
         
             if a == 0:
-                strain = S.array([float(line1[0]),float(line2[1]),float(line3[2]),2*float(line2[2]),2*float(line1[2]),2*float(line1[1])])
+                strain = np.array([float(line1[0]),float(line2[1]),float(line3[2]),2*float(line2[2]),2*float(line1[2]),2*float(line1[1])])
             else:
-                strain = S.row_stack((strain,S.array([float(line1[0]),float(line2[1]),float(line3[2]),2*float(line2[2]),2*float(line1[2]),2*float(line1[1])])))
+                strain = np.row_stack((strain,np.array([float(line1[0]),float(line2[1]),float(line3[2]),2*float(line2[2]),2*float(line1[2]),2*float(line1[1])])))
         
             # now get corresponding stress data from .castep
             (units, thisStress) = castep.get_stress_dotcastep(seedname+
@@ -227,7 +228,7 @@ def main(input_options, libmode=False):
             if a == 0:
                 stress = thisStress
             else:
-                stress = S.row_stack((stress,thisStress))
+                stress = np.row_stack((stress,thisStress))
     
 
         """
@@ -252,7 +253,7 @@ def main(input_options, libmode=False):
                 # correct for scipy weirdness - see http://www.scipy.org/scipy/scipy/ticket/8
                 # This was fixed before 0.7.0 release. Maybe in some versions of 0.6.x too - 
                 # will report huge errors if the check is wrong
-                stderr = S.sqrt((numsteps * stderr**2)/(numsteps-2))
+                stderr = np.sqrt((numsteps * stderr**2)/(numsteps-2))
                 error  = stderr/sqrt(sum(square(strain[:,index2-1])))
             
             # print info about the fit
@@ -292,7 +293,7 @@ def main(input_options, libmode=False):
             try:
                 valList.append(val[0])
                 erList.append(val[1])
-                return (sum(valList)/len(valList)), (S.sqrt(sum([x**2 for x in erList])/len(erList)**2))
+                return (sum(valList)/len(valList)), (np.sqrt(sum([x**2 for x in erList])/len(erList)**2))
             except NameError:
                 return val[0], val[1]
         
@@ -305,7 +306,7 @@ def main(input_options, libmode=False):
             return val[0], newList, val[1], errorList
         
 
-        cij = S.zeros(21)
+        cij = np.zeros(21)
         
         # Analyse the patterns to see which strains were applied
         strainsUsed = analysePatterns(strain[0,:])
@@ -314,13 +315,13 @@ def main(input_options, libmode=False):
 
         if symmetryType == "Cubic":
             
-            if S.all(strainsUsed.transpose() == S.array([[1.0, 0.0, 0.0, 1.0, 0.0, 0.0]])): # strain pattern e1+e4      
+            if np.all(strainsUsed.transpose() == np.array([[1.0, 0.0, 0.0, 1.0, 0.0, 0.0]])): # strain pattern e1+e4      
 
                 finalCijs[0], errors[0] = __fit(1,1)                    # fit C11
                 fit_21, fit_21_error = __fit(2,1)
                 fit_31, fit_31_error = __fit(3,1)
                 finalCijs[6] = (fit_21 + fit_31)/2   # fit C21+C31      
-                errors[6] = S.sqrt((fit_21_error**2)/4 + (fit_31_error**2)/4)
+                errors[6] = np.sqrt((fit_21_error**2)/4 + (fit_31_error**2)/4)
                 finalCijs[3], errors[3] = __fit(4,4)                    # fit C44
                 
             else:
@@ -328,7 +329,7 @@ def main(input_options, libmode=False):
                 sys.exit(1)
                 
         elif symmetryType == "Trigonal-high/Hexagonal":
-            if S.all(strainsUsed.transpose() == S.array([[0.0, 0.0, 1.0, 0.0, 0.0, 0.0]])): # strain pattern e3 (hexagonal)
+            if np.all(strainsUsed.transpose() == np.array([[0.0, 0.0, 1.0, 0.0, 0.0, 0.0]])): # strain pattern e3 (hexagonal)
 
                     # fit C13 + C23, and add to list (more values coming...)
                     finalCijs[7], cij13, errors[7], er13 = __createListAndAppend(__fit(1,3))
@@ -336,14 +337,14 @@ def main(input_options, libmode=False):
                                         
                     finalCijs[2], errors[2] = __fit(3,3)                # fit C33
                     
-            elif S.all(strainsUsed.transpose() == S.array([[1.0, 0.0, 0.0, 1.0, 0.0, 0.0]])):   # strain pattern e1+e4 (hexagonal)
+            elif np.all(strainsUsed.transpose() == np.array([[1.0, 0.0, 0.0, 1.0, 0.0, 0.0]])):   # strain pattern e1+e4 (hexagonal)
 
                     finalCijs[0], errors[0] = __fit(1,1)                          # fit C11
                     finalCijs[6], errors[6] = __fit(2,1)                          # fit C21
                     finalCijs[7], errors[7] = __appendOrReplace(cij13,er13,__fit(3,1)) # fit C31
                     finalCijs[3], errors[3] = __fit(4,4)                          # fit C44
 
-            elif S.all(strainsUsed.transpose() == S.array([[1.0, 0.0, 0.0, 0.0, 0.0, 0.0]])):   
+            elif np.all(strainsUsed.transpose() == np.array([[1.0, 0.0, 0.0, 0.0, 0.0, 0.0]])):   
                 
                     # strain pattern e1 (trigonal-high)
 
@@ -354,7 +355,7 @@ def main(input_options, libmode=False):
                     # Should be zero? finalCijs[9], errors[9] = __fit(5,1)                # fit C51
                     
                     
-            elif S.all(strainsUsed.transpose() == S.array([[0.0, 0.0, 1.0, 1.0, 0.0, 0.0]])):   
+            elif np.all(strainsUsed.transpose() == np.array([[0.0, 0.0, 1.0, 1.0, 0.0, 0.0]])):   
                     
                     # strain pattern e3+e4 (trigonal-high)
                     # could recalculate C13/C14/C23/C24/C46 here, but won't just now
@@ -367,7 +368,7 @@ def main(input_options, libmode=False):
                 sys.exit(1)
                 
         elif symmetryType == "Trigonal-low":
-            if S.all(strainsUsed.transpose() == S.array([[1.0, 0.0, 0.0, 0.0, 0.0, 0.0]])): 
+            if np.all(strainsUsed.transpose() == np.array([[1.0, 0.0, 0.0, 0.0, 0.0, 0.0]])): 
                 
                     # strain pattern e1 
 
@@ -377,7 +378,7 @@ def main(input_options, libmode=False):
                     finalCijs[8], errors[8] = __fit(4,1)                # fit C41
                     finalCijs[9], errors[9] = __fit(5,1)                # fit C51
                     
-            elif S.all(strainsUsed.transpose() == S.array([[0.0, 0.0, 1.0, 1.0, 0.0, 0.0]])):   
+            elif np.all(strainsUsed.transpose() == np.array([[0.0, 0.0, 1.0, 1.0, 0.0, 0.0]])):   
                 
                     # strain pattern e3+e4
                     # could recalculate C13/C14/C23/C24/C46 here, but won't just now
@@ -390,7 +391,7 @@ def main(input_options, libmode=False):
                 sys.exit(1)
         
         elif symmetryType == "Tetragonal":          
-            if S.all(strainsUsed.transpose() == S.array([[1.0, 0.0, 0.0, 1.0, 0.0, 0.0]])): # strain pattern e1+e4 
+            if np.all(strainsUsed.transpose() == np.array([[1.0, 0.0, 0.0, 1.0, 0.0, 0.0]])): # strain pattern e1+e4 
 
                     finalCijs[0],  errors[0]  = __fit(1,1)               # fit C11
                     finalCijs[6],  errors[6]  = __fit(2,1)               # fit C21
@@ -399,7 +400,7 @@ def main(input_options, libmode=False):
                     finalCijs[3],  errors[3]  = __fit(4,4)               # fit C44
 
                     
-            elif S.all(strainsUsed.transpose() == S.array([[0.0, 0.0, 1.0, 0.0, 0.0, 1.0]])):   # strain pattern e3+e6
+            elif np.all(strainsUsed.transpose() == np.array([[0.0, 0.0, 1.0, 0.0, 0.0, 1.0]])):   # strain pattern e3+e6
                     
                     finalCijs[2], errors[2] = __fit(3,3)                # fit C33
                     finalCijs[5], errors[5] = __fit(6,6)                # fit C66
@@ -409,14 +410,14 @@ def main(input_options, libmode=False):
                 sys.exit(1)
                                     
         elif symmetryType == "Orthorhombic":            
-            if S.all(strainsUsed.transpose() == S.array([[1.0, 0.0, 0.0, 1.0, 0.0, 0.0]])): # strain pattern e1+e4 
+            if np.all(strainsUsed.transpose() == np.array([[1.0, 0.0, 0.0, 1.0, 0.0, 0.0]])): # strain pattern e1+e4 
 
                     finalCijs[0], errors[0] = __fit(1,1)                                # fit C11
                     finalCijs[6], cij12, errors[6], er12 = __createListAndAppend(__fit(2,1))  # fit C21
                     finalCijs[7], cij13, errors[7], er13 = __createListAndAppend(__fit(3,1))  # fit C31
                     finalCijs[3], errors[3] = __fit(4,4)                                # fit C44
                     
-            elif S.all(strainsUsed.transpose() == S.array([[0.0, 1.0, 0.0, 0.0, 1.0, 0.0]])):   # strain pattern e2+e5 
+            elif np.all(strainsUsed.transpose() == np.array([[0.0, 1.0, 0.0, 0.0, 1.0, 0.0]])):   # strain pattern e2+e5 
 
                     
                     finalCijs[6], errors[6] = __appendOrReplace(cij12,er12,__fit(1,2))       # fit C12  
@@ -424,7 +425,7 @@ def main(input_options, libmode=False):
                     finalCijs[11], cij23, errors[11], er23 = __createListAndAppend(__fit(3,2)) # fit C32                        
                     finalCijs[4], errors[4] = __fit(5,5)                                # fit C55
                     
-            elif S.all(strainsUsed.transpose() == S.array([[0.0, 0.0, 1.0, 0.0, 0.0, 1.0]])):   # strain pattern e3+e6 
+            elif np.all(strainsUsed.transpose() == np.array([[0.0, 0.0, 1.0, 0.0, 0.0, 1.0]])):   # strain pattern e3+e6 
 
                     finalCijs[7],  errors[7]  = __appendOrReplace(cij13,er13,__fit(1,3))      # fit C13
                     finalCijs[11], errors[11] = __appendOrReplace(cij23,er23,__fit(2,3))      # fit C23
@@ -436,7 +437,7 @@ def main(input_options, libmode=False):
                 sys.exit(1)
                 
         elif symmetryType == "Monoclinic":          
-            if S.all(strainsUsed.transpose() == S.array([[1.0, 0.0, 0.0, 1.0, 0.0, 0.0]])): # strain pattern e1+e4 
+            if np.all(strainsUsed.transpose() == np.array([[1.0, 0.0, 0.0, 1.0, 0.0, 0.0]])): # strain pattern e1+e4 
 
                     finalCijs[0], errors[0] = __fit(1,1)                                # fit C11
                     finalCijs[6], cij12, errors[6], er12 = __createListAndAppend(__fit(2,1))  # fit C21
@@ -446,7 +447,7 @@ def main(input_options, libmode=False):
                     finalCijs[19], cij64, errors[19], er64 = __createListAndAppend(__fit(6,4)) # fit C64
 
                     
-            elif S.all(strainsUsed.transpose() == S.array([[0.0, 0.0, 1.0, 0.0, 0.0, 1.0]])):   # strain pattern e3+e6 
+            elif np.all(strainsUsed.transpose() == np.array([[0.0, 0.0, 1.0, 0.0, 0.0, 1.0]])):   # strain pattern e3+e6 
 
                     finalCijs[7], errors[7] = __appendOrReplace(cij13,er13,__fit(1,3))       # fit C13
                     finalCijs[11], cij23, errors[11], er23 = __createListAndAppend(__fit(2,3)) # fit C23
@@ -455,7 +456,7 @@ def main(input_options, libmode=False):
                     finalCijs[19], errors[19] = __appendOrReplace(cij64,er64,__fit(4,6))      # fit C46
                     finalCijs[5], errors[5] = __fit(6,6)                                # fit C66
                     
-            elif S.all(strainsUsed.transpose() == S.array([[0.0, 1.0, 0.0, 0.0, 0.0, 0.0]])):   # strain pattern e2
+            elif np.all(strainsUsed.transpose() == np.array([[0.0, 1.0, 0.0, 0.0, 0.0, 0.0]])):   # strain pattern e2
 
                     finalCijs[6], errors[6]  = __appendOrReplace(cij12,er12,__fit(1,2))      # fit C12
                     finalCijs[1], errors[1]  = __fit(2,2)                               # fit C22
@@ -463,7 +464,7 @@ def main(input_options, libmode=False):
                     finalCijs[13], cij52, errors[13], er52 = __createListAndAppend(__fit(5,2)) # fit C52
 
                     
-            elif S.all(strainsUsed.transpose() == S.array([[0.0, 0.0, 0.0, 0.0, 1.0, 0.0]])):   # strain pattern e5
+            elif np.all(strainsUsed.transpose() == np.array([[0.0, 0.0, 0.0, 0.0, 1.0, 0.0]])):   # strain pattern e5
 
                     finalCijs[9], errors[9]  = __appendOrReplace(cij51,er51,__fit(1,5))      # fit C15
                     finalCijs[13],errors[13] = __appendOrReplace(cij52,er52,__fit(2,5))      # fit C25
@@ -475,7 +476,7 @@ def main(input_options, libmode=False):
                 
         elif symmetryType == "Triclinic":
             
-            if S.all(strainsUsed.transpose() == S.array([[1.0, 0.0, 0.0, 0.0, 0.0, 0.0]])): # strain pattern e1
+            if np.all(strainsUsed.transpose() == np.array([[1.0, 0.0, 0.0, 0.0, 0.0, 0.0]])): # strain pattern e1
 
                     finalCijs[0], errors[0]  = __fit(1,1)                               # fit C11
                     finalCijs[6], cij12, errors[6], er12 = __createListAndAppend(__fit(2,1))  # fit C21 
@@ -484,7 +485,7 @@ def main(input_options, libmode=False):
                     finalCijs[9], cij15, errors[9], er15 = __createListAndAppend(__fit(5,1))  # fit C51                 
                     finalCijs[10],cij16, errors[10],er16 = __createListAndAppend(__fit(6,1))  # fit C61                 
                     
-            elif S.all(strainsUsed.transpose() == S.array([[0.0, 1.0, 0.0, 0.0, 0.0, 0.0]])):   # strain pattern e2
+            elif np.all(strainsUsed.transpose() == np.array([[0.0, 1.0, 0.0, 0.0, 0.0, 0.0]])):   # strain pattern e2
 
                     finalCijs[6], errors[6]  = __appendOrReplace(cij12,er12,__fit(1,2))       # fit C12
                     finalCijs[1], errors[1]  = __fit(2,2)                                # fit C22
@@ -493,7 +494,7 @@ def main(input_options, libmode=False):
                     finalCijs[13], cij25, errors[13], er25 = __createListAndAppend(__fit(5,2))  # fit C52   
                     finalCijs[14], cij26, errors[14], er26 = __createListAndAppend(__fit(6,2))  # fit C62       
                     
-            elif S.all(strainsUsed.transpose() == S.array([[0.0, 0.0, 1.0, 0.0, 0.0, 0.0]])):   # strain pattern e3
+            elif np.all(strainsUsed.transpose() == np.array([[0.0, 0.0, 1.0, 0.0, 0.0, 0.0]])):   # strain pattern e3
 
                     finalCijs[7],  errors[7]  = __appendOrReplace(cij13,er13,__fit(1,3))       # fit C13
                     finalCijs[11], errors[11] = __appendOrReplace(cij23,er23,__fit(2,3))       # fit C23                    
@@ -502,7 +503,7 @@ def main(input_options, libmode=False):
                     finalCijs[16], cij35, errors[16], er35 = __createListAndAppend(__fit(5,3))  # fit C53   
                     finalCijs[17], cij36, errors[17], er36 = __createListAndAppend(__fit(6,3))  # fit C63   
                     
-            elif S.all(strainsUsed.transpose() == S.array([[0.0, 0.0, 0.0, 1.0, 0.0, 0.0]])):   # strain pattern e4
+            elif np.all(strainsUsed.transpose() == np.array([[0.0, 0.0, 0.0, 1.0, 0.0, 0.0]])):   # strain pattern e4
 
                     finalCijs[8],  errors[8]  = __appendOrReplace(cij14,er14,__fit(1,4))      # fit C14
                     finalCijs[12], errors[12] = __appendOrReplace(cij24,er24,__fit(2,4))      # fit C24
@@ -511,7 +512,7 @@ def main(input_options, libmode=False):
                     finalCijs[18], cij45, errors[18], er45 = __createListAndAppend(__fit(5,4))  # fit C54   
                     finalCijs[19], cij46, errors[19], er46 = __createListAndAppend(__fit(6,4))  # fit C64       
 
-            elif S.all(strainsUsed.transpose() == S.array([[0.0, 0.0, 0.0, 0.0, 1.0, 0.0]])):   # strain pattern e5
+            elif np.all(strainsUsed.transpose() == np.array([[0.0, 0.0, 0.0, 0.0, 1.0, 0.0]])):   # strain pattern e5
             
                     finalCijs[9],  errors[9]  = __appendOrReplace(cij15,er15,__fit(1,5))     # fit C15
                     finalCijs[13], errors[13] = __appendOrReplace(cij25,er25,__fit(2,5))     # fit C25
@@ -520,7 +521,7 @@ def main(input_options, libmode=False):
                     finalCijs[4],  errors[4]  = __fit(5,5)                              # fit C55
                     finalCijs[20], cij56, errors[20], er56 = __createListAndAppend(__fit(6,5))  # fit C65   
                     
-            elif S.all(strainsUsed.transpose() == S.array([[0.0, 0.0, 0.0, 0.0, 0.0, 1.0]])):   # strain pattern e6
+            elif np.all(strainsUsed.transpose() == np.array([[0.0, 0.0, 0.0, 0.0, 0.0, 1.0]])):   # strain pattern e6
             
                     finalCijs[10], errors[10]  = __appendOrReplace(cij16,er16,__fit(1,6))      # fit C16
                     finalCijs[14], errors[14]  = __appendOrReplace(cij26,er26,__fit(2,6))      # fit C26
@@ -544,14 +545,14 @@ def main(input_options, libmode=False):
     if symmetryType == "Trigonal-high/Hexagonal" or symmetryType == "Trigonal-low":
         # for these systems, C66 is calculated as a combination of the other Cijs.
         finalCijs[5] = 0.5*(finalCijs[0]-finalCijs[6])
-        errors[5] = S.sqrt(0.25*(errors[0]**2+errors[6]**2))
+        errors[5] = np.sqrt(0.25*(errors[0]**2+errors[6]**2))
     
     c = cMatrix(symmetryType,TetrHigh)
     
     # Generate the 6x6 matrix of elastic constants 
     # - negative values signify a symmetry relation
-    finalCijMatrix = S.zeros((6,6)) 
-    finalErrors = S.zeros((6,6))
+    finalCijMatrix = np.zeros((6,6)) 
+    finalErrors = np.zeros((6,6))
     for i in range(0,6):
         for j in range(0,6):
             index = int(c[i,j])
@@ -574,16 +575,16 @@ def main(input_options, libmode=False):
     
     print("\n<>---------------------------- RESULTS ----------------------------------<>\n")
     print("Final Cij matrix ("+units+"):")
-    print(S.array2string(finalCijMatrix,max_line_width=130,suppress_small=True))
+    print(np.array2string(finalCijMatrix,max_line_width=130,suppress_small=True))
     print("\nErrors on Cij matrix ("+units+"):")
-    print(S.array2string(finalErrors,max_line_width=130,suppress_small=True))
+    print(np.array2string(finalErrors,max_line_width=130,suppress_small=True))
 
     (sij, esij, covsij) = CijUtil.invertCij(finalCijMatrix,finalErrors) 
     
     print("\nFinal Sij matrix ("+units+"-1):")
-    print(S.array2string(sij,max_line_width=130,suppress_small=True))
+    print(np.array2string(sij,max_line_width=130,suppress_small=True))
     print("\nErrors on Sij matrix ("+units+"-1):")
-    print(S.array2string(esij,max_line_width=130,suppress_small=True))
+    print(np.array2string(esij,max_line_width=130,suppress_small=True))
 
     print("\n<>----------------------------------------------------------------------<>\n")
     if symmetryType == "Cubic":
@@ -615,7 +616,7 @@ def main(input_options, libmode=False):
     
     print("\n<>-----------------------------------------------------------------------<>\n")
     
-    S.savetxt(seedname + '_cij.txt', finalCijMatrix)    
+    np.savetxt(seedname + '_cij.txt', finalCijMatrix)    
     if options.latex:
         CijUtil.latexCij(finalCijMatrix, finalErrors, seedname + '.tex', options.latex_nt)
     if options.txt:
