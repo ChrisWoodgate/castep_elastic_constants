@@ -22,5 +22,7 @@ def AndersonDebye(Cij, eCij, outputfile, nt=False):
     # 1. Carry across code from project Jupyter Notebook
     # 2. Think about error propogation?
 
+    (voigtB, reussB, voigtG, reussG, hillB, hillG, evB, erB, evG, erG, ehB, ehG) = CijUtil.polyCij(finalCijMatrix, finalErrors)
+
     return None
     
