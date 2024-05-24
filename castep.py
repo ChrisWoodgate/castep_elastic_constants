@@ -129,3 +129,17 @@ def get_stress_dotcastep(filename):
                           float(stressData[3]),float(stressData[2])])
 	return(units, stress)
 
+# regular expression which matches the volume/density block from a .castep file
+densityRE = re.compile(r"\s+\sCurrent\scell\svolume\s+=\s+(\d+\.\d+)\s+A\*\*3\s*\n\s+density\s+=\s+(\d+.\d+)\s+AMU\/A\*\*3\s*\n\s+=\s+(\d+.\d+)\s+g\/cm\^3\s*\n")
+
+def get_density_dotcastep(seedname):
+	"""Extract the optimised density from seedname.castep file
+
+	   Returns density in kg/m3.
+	"""
+    filename = seedname + ".castep"
+	dotCastep = open(filename,"r")
+	densityData = densityRE.findall(dotCastep.read())[0]
+	dotCastep.close()
+    print(densityData)
+	return None
