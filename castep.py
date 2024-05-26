@@ -147,6 +147,8 @@ def get_density_dotcastep(seedname):
 
 	density_kg_m3 = float(density_g_cm3)*1e3
 
+	volume_m3 = float(cell_volume)*1e-30
+
 	dotCastep.close()
 
-	return density_kg_m3
+	return density_kg_m3, volume_m3
