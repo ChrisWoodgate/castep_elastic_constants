@@ -13,7 +13,7 @@ Christopher D. Woodgate, 2024
 import numpy as np
 import CijUtil
 
-def AndersonDebye(Cij, eCij, outputfile, nt=False):
+def AndersonDebye(rho, cell_vol, Cij, eCij, nt=False):
     """Use calculated Hill bulk and shear moduli and return
        estimates of the polycrystalline longitudinal and transverse
        sound velocities and (consequently) the Debye temperature."""
@@ -22,7 +22,24 @@ def AndersonDebye(Cij, eCij, outputfile, nt=False):
     # 1. Carry across code from project Jupyter Notebook
     # 2. Think about error propogation?
 
-    (voigtB, reussB, voigtG, reussG, hillB, hillG, evB, erB, evG, erG, ehB, ehG) = CijUtil.polyCij(finalCijMatrix, finalErrors)
+    # Planck constant
+    h = 6.62607015e-34
+    #Boltzmann constant
+    k_B = 1.380649e-23
 
-    return None
+    (voigtB, reussB, voigtG, reussG, hillB, hillG, evB, erB, evG, erG, ehB, ehG) = CijUtil.polyCij(Cij, eCij)
+
+    # Transverse and longitudinal sound velocities
+    v_s = np.sqrt(hillG*1e9/rho)
+
+    v_l = np.sqrt((hillB*1e9 + 4.0/3.0*hillG*1e9)/rho)
+
+    # Averaged sound velocity according to
+    # O. L. Anderson, J. Phys. Chem. Solids 24, 909-917 (1963)
+    v_m = 1.0/np.cbrt(1.0/3.0*(2.0/v_s**3.0 + 1.0/v_l**3.0))
+
+    # Anderson's formula for Debye temperature
+    theta = h / k_B*v_m*np.cbrt((3.0)/(4.0*np.pi*cell_vol))
+
+    return(v_s, v_l, v_m, theta)
     
