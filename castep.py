@@ -137,9 +137,16 @@ def get_density_dotcastep(seedname):
 
 	   Returns density in kg/m3.
 	"""
-    filename = seedname + ".castep"
+    
+    # This should be the starting, stress-free geometry
+	filename = seedname + ".castep"
+
 	dotCastep = open(filename,"r")
-	densityData = densityRE.findall(dotCastep.read())[0]
+
+	(cell_volume, density_amu_ang, density_g_cm3) = densityRE.findall(dotCastep.read())[0]
+
+	density_kg_m3 = float(density_g_cm3)*1e3
+
 	dotCastep.close()
-    print(densityData)
-	return None
+
+	return density_kg_m3
