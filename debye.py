@@ -13,14 +13,13 @@ Christopher D. Woodgate, 2024
 import numpy as np
 import CijUtil
 
-def AndersonDebye(rho, cell_vol, Cij, eCij, nt=False):
+def AndersonDebye(rho, cell_vol, n_particles, Cij, eCij, nt=False):
     """Use calculated Hill bulk and shear moduli and return
        estimates of the polycrystalline longitudinal and transverse
        sound velocities and (consequently) the Debye temperature."""
 
     # TODO
-    # 1. Carry across code from project Jupyter Notebook
-    # 2. Think about error propogation?
+    # 1. Think about error propogation
 
     # Planck constant
     h = 6.62607015e-34
@@ -38,8 +37,12 @@ def AndersonDebye(rho, cell_vol, Cij, eCij, nt=False):
     # O. L. Anderson, J. Phys. Chem. Solids 24, 909-917 (1963)
     v_m = 1.0/np.cbrt(1.0/3.0*(2.0/v_s**3.0 + 1.0/v_l**3.0))
 
+    # Anderson's formula (although not explicit in text)
+    # works with the volume per ion of a material
+    vol_per_ion = cell_vol/float(n_particles)
+
     # Anderson's formula for Debye temperature
-    theta = h / k_B*v_m*np.cbrt((3.0)/(4.0*np.pi*cell_vol))
+    theta = h / k_B*v_m*np.cbrt((3.0)/(4.0*np.pi*vol_per_ion))
 
     return(v_s, v_l, v_m, theta)
     
