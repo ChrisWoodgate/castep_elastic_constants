@@ -18,6 +18,7 @@ import numpy as np
 
 import CijUtil
 import castep
+import debye
 
 version = 1
     
@@ -610,10 +611,23 @@ def main(input_options, libmode=False):
     print("\n<>--------------------- POLYCRYSTALLINE RESULTS -------------------------<>\n")
     (voigtB, reussB, voigtG, reussG, hillB, hillG, evB, erB, evG, erG, ehB, ehG) = CijUtil.polyCij(finalCijMatrix, finalErrors)
     format = "%16s : %11.5f %11.5f %11.5f %11.5f %11.5f %11.5f %6s"
+    print("                                Bulk Moduli                                           \n")
     print("                     Voigt         +/-       Reuss         +/-       Hill          +/-")
     print(format % ("Bulk Modulus", voigtB, evB, reussB, erB, hillB, ehB, units))
     print(format % ("Shear Modulus", voigtG, evG, reussG, erG, hillG, ehG, units))
     
+    rho, V = castep.get_density_dotcastep(seedname)
+    N_ions, N_species = castep.get_nparticles_dotcastep(seedname)
+    (v_s, v_l, v_m, theta) = debye.AndersonDebye(rho, V, N_ions, finalCijMatrix, finalErrors)
+
+    print("\n                   Sound Velocities and Debye Temperature                             ")
+    print("           (O. L. Anderson, J. Phys. Chem. Solids 24, 909-917 (1963))                 \n")
+
+    format = "%25s : %11.2f %6s"
+    print(format % ("     Transverse Sound Velocity", v_s, "m/s"))
+    print(format % ("   Longitudinal Sound Velocity", v_l, "m/s"))
+    print(format % ("        Average Sound Velocity", v_m, "m/s"))
+    print(format % ("    Debye Temperature Estimate", theta, "K"))
     print("\n<>-----------------------------------------------------------------------<>\n")
     
     np.savetxt(seedname + '_cij.txt', finalCijMatrix)    
