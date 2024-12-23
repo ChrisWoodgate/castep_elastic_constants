@@ -15,12 +15,17 @@ How-To Guide
 
 Below is a list of steps to follow to use this set of scripts to obtain the elastic constants for a structure, starting from an optimised geometry and using a set of shears.
 
-1. Starting with a `<seedname>.cell` and `<seedname>.param` file for your structure, perform the CASTEP `GeometryOptimisation` task. Note that, to obtain *good* elastic constants, you will need to use tighter tolerances on energies, forces, and atomic displacements than you would in a usual geometry optimsation. See, *e.g.* the [CASTEP webiste](https://www.tcm.phy.cam.ac.uk/castep/documentation/WebHelp/content/modules/castep/tskcastepsetelecquality.htm) for a list of suggested tolerances. Make sure that you have the options `WRITE_CELL_STRUCTURE: TRUE` and `CALCULATE_STRESS: TRUE`, as these will be important later.
-2. Move the optimised cell to the file `<seedname>.cell`. (If you like, save the original geometry to something like `<seedname>.cell.old` first.)
-3. Run the command
-        python3 /path/to/castep_elastic_constants/generate_strain.py <seedname> <options>
+**First:** Starting with a `<seedname>.cell` and `<seedname>.param` file for your structure, perform the CASTEP `GeometryOptimisation` task. Note that, to obtain *good* elastic constants, you will need to use tighter tolerances on energies, forces, and atomic displacements than you would in a usual geometry optimsation. See, *e.g.* the [CASTEP webiste](https://www.tcm.phy.cam.ac.uk/castep/documentation/WebHelp/content/modules/castep/tskcastepsetelecquality.htm) for a list of suggested tolerances. Make sure that you have the options `WRITE_CELL_STRUCTURE: TRUE` and `CALCULATE_STRESS: TRUE`, as these will be important later.
+
+**Second:** Move the optimised cell to the file `<seedname>.cell`. (If you like, save the original geometry to something like `<seedname>.cell.old` first.)
+
+**Third:** Run the command
+```
+python3 /path/to/castep_elastic_constants/generate_strain.py <seedname> <options>
+```
 to generate the strained structures. Note that options like `numsteps = N` and `maxstrain = s` will control how many strains are generated and how large they will be for each shearing pattern, respectively. This will generate a whole series of `<seedname>_cij__i__j.param` and `<seedname>_cij__i__j.cell` files with the cells and atomic coordinates in the `.cell` files sheared appropriately. Note also that the cell constraints will be updated, with `FIX_ALL_CELL true`.
-4. Loop over all of the sheared structures and perform fixed cell geometry optimisations on all of these using a script which looks something like this (if using slurm):
+
+**Fourth:** Loop over all of the sheared structures and perform fixed cell geometry optimisations on all of these using a script which looks something like this (if using slurm):
 ```
 #!/bin/bash
 #SBATCH --nodes=N
@@ -43,7 +48,8 @@ done
 exit 0
 ```
 Once this has finished and you have successfully generated all the `<seedname>_cij__i__j.castep` files (check for warnings!) you will then have data to obtain the elastic constants.
-5. Run the command
+
+**Fifth:** Run the command
 ```
 python3 /path/to/castep_elastic_constants/elastics.py <seedname> <options>
 ```
